@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Gallery</title>
+	<style>
+		body {
+			background-color: #FFFFCC;
+		}
+		li{
+			word-wrap: break-word;
+			word-break: break-all;
+		}
+		.desc{
+			font-size: 10px;
+		}
+		img.preview {
+			max-width: 100%;
+		}
+
+		img.limitHeight {
+			height: 50vh;
+		}
+
+		li.click {
+			font-weight: bolder;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="app">
+		<input type="file" webkitdirectory multiple ref="fileinput">
+		<button v-on:click="selectDir">Load dir</button>
+		<select v-on:change="sortList">
+			<option value="">No sort</option>
+			<option v-for="(v,k) in sortBy" v-bind:value="v">{{v}}</option>
+		</select>
+		<a href="javascript:void(document.querySelector('li.click').scrollIntoView())">To current</a>
+		<ul>
+			<li v-for="(file,index) in list" v-bind:class="{click:clickIndex === index}">
+				<div>
+					<a href="javascript:void(0);" v-on:click="selectFile(file,index,$event)">{{file.webkitRelativePath}}</a>
+				</div>
+				<div v-if="currentSelect === index">
+					<div class="desc">
+						Name:{{file.name}}<br>
+						Type:{{file.type}}<br>
+						Size:{{file.size.toLocaleString('en-US')}}<br>
+						Modified:{{(new Date(file.lastModified)).toISOString()}}
+						<span v-if="currentImgUrl!=='//:0'">
+							<br>
+							Image Size:{{imageInfo}}
+							<label><input type="checkbox" v-model="limitHeight">limit height</label>
+							<a v-bind:href="currentImgUrl" v-bind:download="file.name">Download</a>
+							<a href="javascript:void(0)" v-on:click="openInNew">Open</a>
+						</span>
+					</div>
+					<img class="preview" v-bind:class="{limitHeight:limitHeight}" v-bind:src="currentImgUrl" v-bind:alt="file.name" v-on:load="imageLoad">
+				</div>
+			</li>
+		</ul>
+	</div>
+	<script src="./js/vue.js"></script>
+	<script>
+		!(function () {
+			var app = new Vue({
+				el: '#app',
+				data: {
+					list: [],
+					sortBy:['webkitRelativePath','type','size','lastModified'],
+					clickIndex: -1,
+					currentSelect: -1,
+					currentImgUrl: '//:0',
+					imageInfo: '',
+					limitHeight: true,
+				},
+				methods: {
+					selectDir(event) {
+						let files = this.$refs.fileinput.files;
+						this.list = Array.from(files);
+						Object.assign(this, {
+							clickIndex: -1,
+							currentSelect: -1,
+							currentImgUrl: '//:0',
+							imageInfo: '',
+							limitHeight: true,
+						});
+					},
+					selectFile(file, index, event) {
+						console.log('select:',index, file);
+						this.clickIndex = index;
+						// this.currentImgUrl = '//:0';
+						this.imageInfo = '';
+
+						if (index !== this.currentSelect) {
+							this.currentSelect = index;
+							let reader = new FileReader();
+							new Promise(resolve => {
+								if(file.type.startsWith('image/')){
+									reader.onload = reader.onerror = resolve;
+									reader.readAsDataURL(file);
+								}else{
+									setTimeout(()=>{
+										resolve({
+											target:{
+												result:'//:0',
+											}
+										});
+									},1000/30);
+								}
+							}).then(e => {
+								this.currentImgUrl = e.target.result;
+								// event.target.scrollIntoViewIfNeeded(false);
+								event.target.scrollIntoView({
+									behavior: 'auto',
+									block: 'start',
+									inline: 'start',
+								});
+							}).catch(e => {
+								console.log(e);
+							});
+						} else {
+							this.currentSelect = -1;
+						}
+					},
+					imageLoad(event) {
+						this.imageInfo = `${event.target.naturalWidth} x ${event.target.naturalHeight}`;
+					},
+					openInNew(){
+						let newWin = open('./empty.html','_blank');
+						setTimeout(()=>{
+							newWin.postMessage(`
+								document.body.appendChild(Object.assign(document.createElement('img'),{
+									src:"${this.currentImgUrl}"
+								}));
+							`, "*");
+						},1000/30);
+					},
+					sortList(ev){
+						let sortBy = ev.target.value;
+						if(sortBy){
+							let sortStart = Date.now();
+							this.list.sort((a,b)=>{
+								let va = a[sortBy];
+								let vb = b[sortBy];
+								if(typeof va === 'string'){
+									va = va.toUpperCase();
+									vb = vb.toUpperCase();
+								}
+								if(va<vb) return -1;
+								if(va>vb) return 1;
+								return 0;
+							});
+							console.log(`Sort performance by`,sortBy,':',Date.now() - sortStart);
+						}
+					},
+				},
+			});
+		})();
+
+		// entirely
+		function elementInViewport(el) {
+			var top = el.offsetTop;
+			var left = el.offsetLeft;
+			var width = el.offsetWidth;
+			var height = el.offsetHeight;
+
+			while (el.offsetParent) {
+				el = el.offsetParent;
+				top += el.offsetTop;
+				left += el.offsetLeft;
+			}
+
+			return (
+				top >= window.pageYOffset &&
+				left >= window.pageXOffset &&
+				(top + height) <= (window.pageYOffset + window.innerHeight) &&
+				(left + width) <= (window.pageXOffset + window.innerWidth)
+			);
+		}
+		// any part
+		function elementInViewport2(el) {
+			var top = el.offsetTop;
+			var left = el.offsetLeft;
+			var width = el.offsetWidth;
+			var height = el.offsetHeight;
+
+			while (el.offsetParent) {
+				el = el.offsetParent;
+				top += el.offsetTop;
+				left += el.offsetLeft;
+			}
+
+			return (
+				top < (window.pageYOffset + window.innerHeight) &&
+				left < (window.pageXOffset + window.innerWidth) &&
+				(top + height) > window.pageYOffset &&
+				(left + width) > window.pageXOffset
+			);
+		}
+	</script>
+</body>
+
+</html>
