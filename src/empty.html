@@ -11,6 +11,7 @@
         onmessage = function(ev){
             eval(ev.data);
         };
+        opener.postMessage('newWin','*');
     </script>
 </body>
 </html>
