@@ -133,13 +133,15 @@
 					},
 					openInNew(){
 						let newWin = open('./empty.html','_blank');
-						setTimeout(()=>{
+						onmessage = (ev)=>{
+							console.log(ev.data);
+							onmessage = null;
 							newWin.postMessage(`
 								document.body.appendChild(Object.assign(document.createElement('img'),{
 									src:"${this.currentImgUrl}"
 								}));
 							`, "*");
-						},1000/30);
+						};
 					},
 					sortList(ev){
 						let sortBy = ev.target.value;
