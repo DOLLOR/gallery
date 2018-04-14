@@ -136,9 +136,28 @@
 							console.log(ev.data);
 							onmessage = null;
 							newWin.postMessage(`
-								document.body.appendChild(Object.assign(document.createElement('img'),{
-									src:"${this.currentImgUrl}"
-								}));
+								!(function(){
+									let imgSetting = [{
+										height:'',
+										width:'',
+									},{
+										height:'100vh',
+										width:'',
+									},{
+										height:'',
+										width:'100vw',
+									}];
+									let currentSetting = 0;
+									document.body.appendChild(Object.assign(document.createElement('img'),{
+										src:"${this.currentImgUrl}",
+										onclick(){
+											currentSetting += 1;
+											if(currentSetting>2) currentSetting = 0;
+											this.style.height = imgSetting[currentSetting].height;
+											this.style.width = imgSetting[currentSetting].width;
+										},
+									}));
+								})();
 							`, "*");
 						};
 					},
