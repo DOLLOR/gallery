@@ -21,10 +21,6 @@
 			max-width: 100%;
 		}
 
-		img.limitHeight {
-			height: 50vh;
-		}
-
 		li.click {
 			font-weight: bolder;
 		}
@@ -55,11 +51,12 @@
 							<br>
 							Image Size:{{imageInfo}}
 							<label><input type="checkbox" v-model="limitHeight">limit height</label>
+							<input type="number" v-model="height" style="width:3em;">
 							<a v-bind:href="currentImgUrl" v-bind:download="file.name">Download</a>
 							<a href="javascript:void(0)" v-on:click="openInNew">Open</a>
 						</span>
 					</div>
-					<img class="preview" v-bind:class="{limitHeight:limitHeight}" v-bind:src="currentImgUrl" v-bind:alt="file.name" v-on:load="imageLoad">
+					<img class="preview" v-bind:style="{height:limitHeight?height+'vh':''}" v-bind:src="currentImgUrl" v-bind:alt="file.name" v-on:load="imageLoad">
 				</div>
 			</li>
 		</ul>
@@ -78,6 +75,7 @@
 					currentImgUrl: '//:0',
 					imageInfo: '',
 					limitHeight: true,
+					height:50,
 				},
 				methods: {
 					selectDir(event) {
